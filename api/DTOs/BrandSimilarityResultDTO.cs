@@ -1,0 +1,7 @@
+﻿namespace api.DTOs;
+
+public class BrandSimilarityResultDTO
+{
+    public string BrandName       { get; set; }           
+    public double SimilarityScore { get; set; } 
+}
