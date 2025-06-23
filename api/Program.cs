@@ -22,6 +22,7 @@ builder.Services.AddScoped<IBrandVariationService, BrandVariationService>();
 
 #region Controllers
 builder.Services.AddControllers();
+
 #endregion
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -36,8 +37,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
-
+app.MapControllers();
 app.Run();
 
