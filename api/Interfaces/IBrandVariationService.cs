@@ -2,7 +2,7 @@
 
 namespace api.Interfaces;
 
-public interface IBrandService
+public interface IBrandVariationService
 {
     void AddBrandWithVariations(Brand brand);
 }

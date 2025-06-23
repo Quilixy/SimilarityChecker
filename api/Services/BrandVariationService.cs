@@ -5,11 +5,11 @@ using api.Interfaces;
 using api.Models;
 
 namespace api.Services;
-public class BrandService : IBrandService
+public class BrandVariationService : IBrandVariationService
 {
     private readonly AppDbContext _context;
     
-    public BrandService(AppDbContext context)
+    public BrandVariationService(AppDbContext context)
     {
         _context = context;
     }
