@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using api.Data;
+using api.DTOs;
 using api.Interfaces;
 using api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -16,14 +17,19 @@ namespace api.Repositories
             _context = context;
         }
 
-        public List<Brand> GetAll()
+        public List<BrandDTO> GetAll()
         {
             return _context.Brands
                 .Include(b => b.Class)
-                .Include(b => b.Sector)
+                .Select(b => new BrandDTO
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    ClassId = b.ClassId
+                })
                 .ToList();
         }
-
+        
         public Brand GetById(int id)
         {
             return _context.Brands

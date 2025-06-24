@@ -11,13 +11,15 @@ namespace api.Controllers
     {
         private readonly IBrandVariationService _brandVariationService;
         private readonly IBrandRepository _brandRepository;
+        private readonly IBrandQueryService _brandQueryService;
 
-        public BrandController(IBrandVariationService brandVariationService, IBrandRepository brandRepository)
+        public BrandController(IBrandVariationService brandVariationService, IBrandRepository brandRepository, IBrandQueryService brandQueryService)
         {
             _brandVariationService = brandVariationService;
             _brandRepository = brandRepository;
-        }
+            _brandQueryService = brandQueryService;
 
+        }
         
         [HttpGet]
         public IActionResult GetAll()
@@ -25,7 +27,6 @@ namespace api.Controllers
             var brands = _brandRepository.GetAll(); 
             return Ok(brands);
         }
-
        
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
@@ -35,7 +36,6 @@ namespace api.Controllers
                 return NotFound();
             return Ok(brand);
         }
-
         
         [HttpPost]
         public IActionResult Create([FromBody] CreateBrandDTO.CreateBrandDto dto)
@@ -78,6 +78,13 @@ namespace api.Controllers
                 return NotFound();
 
             return NoContent();
+        }
+        
+        [HttpPost("similar")]
+        public IActionResult GetSimilarBrands([FromBody] BrandQueryDTO query)
+        {
+            var result = _brandQueryService.GetSimilarBrands(query.BrandName, query.ClassIds);
+            return Ok(result);
         }
     }
 }
