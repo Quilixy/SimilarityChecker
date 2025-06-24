@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using api.Data;
-using api.Dtos;
+using api.DTOs;
 using api.Models;
 
 namespace api.Controllers
@@ -17,7 +17,7 @@ namespace api.Controllers
         }
 
         [HttpPost("add")]
-        public IActionResult CreateSector([FromBody] CreateSectorDto dto)
+        public IActionResult CreateSector([FromBody] CreateSectorDTO dto)
         {
             var sector = new Sector { Name = dto.Name };
             _context.Sectors.Add(sector);

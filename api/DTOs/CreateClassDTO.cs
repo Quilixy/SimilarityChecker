@@ -1,6 +1,6 @@
-﻿namespace api.Dtos
+﻿namespace api.DTOs
 {
-    public class CreateClassDto
+    public class CreateClassDTO
     {
         public int    Id          { get; set; }          
         public string Description { get; set; } 
