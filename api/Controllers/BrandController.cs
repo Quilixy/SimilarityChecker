@@ -46,14 +46,21 @@ namespace api.Controllers
             var brand = new Brand
             {
                 Name = dto.Name,
-                ClassId = dto.ClassId,
-                SectorId = dto.SectorId
+                BrandClasses = dto.ClassIds.Select(classId => new BrandClass
+                {
+                    ClassId = classId
+                }).ToList(),
+                BrandSectors = dto.SectorIds.Select(sectorId => new BrandSector
+                {
+                    SectorId = sectorId
+                }).ToList()
             };
 
             _brandVariationService.AddBrandWithVariations(brand);
 
             return CreatedAtAction(nameof(GetById), new { id = brand.Id }, brand);
         }
+
 
        
         [HttpPut("{id}")]

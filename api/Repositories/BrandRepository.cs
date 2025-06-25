@@ -20,12 +20,16 @@ namespace api.Repositories
         public List<BrandDTO> GetAll()
         {
             return _context.Brands
-                .Include(b => b.Class)
+                .Include(b => b.BrandClasses)
+                .ThenInclude(bc => bc.Class)
+                .Include(b => b.BrandSectors)
+                .ThenInclude(bs => bs.Sector)
                 .Select(b => new BrandDTO
                 {
                     Id = b.Id,
                     Name = b.Name,
-                    ClassId = b.ClassId
+                    Classes = b.BrandClasses.Select(bc => bc.Class).ToList(),
+                    Sectors = b.BrandSectors.Select(bs => bs.Sector).ToList()
                 })
                 .ToList();
         }
@@ -33,9 +37,12 @@ namespace api.Repositories
         public Brand GetById(int id)
         {
             return _context.Brands
-                .Include(b => b.Class)
-                .Include(b => b.Sector)
-                .FirstOrDefault(b => b.Id == id);
+                       .Include(b => b.BrandClasses)
+                       .ThenInclude(bc => bc.Class)
+                       .Include(b => b.BrandSectors)
+                       .ThenInclude(bs => bs.Sector)
+                       .FirstOrDefault(b => b.Id == id)
+                   ?? throw new InvalidOperationException("Brand not found.");
         }
 
         public void Add(Brand brand)
@@ -46,17 +53,40 @@ namespace api.Repositories
 
         public bool Update(Brand brand)
         {
-            var existingBrand = _context.Brands.Find(brand.Id);
+            var existingBrand = _context.Brands
+                .Include(b => b.BrandClasses)
+                .Include(b => b.BrandSectors)
+                .FirstOrDefault(b => b.Id == brand.Id);
+
             if (existingBrand == null)
                 return false;
 
             existingBrand.Name = brand.Name;
-            existingBrand.ClassId = brand.ClassId;
-            existingBrand.SectorId = brand.SectorId;
+            
+            existingBrand.BrandClasses.Clear();
+            foreach (var bc in brand.BrandClasses)
+            {
+                existingBrand.BrandClasses.Add(new BrandClass
+                {
+                    BrandId = brand.Id,
+                    ClassId = bc.ClassId
+                });
+            }
+            
+            existingBrand.BrandSectors.Clear();
+            foreach (var bs in brand.BrandSectors)
+            {
+                existingBrand.BrandSectors.Add(new BrandSector
+                {
+                    BrandId = brand.Id,
+                    SectorId = bs.SectorId
+                });
+            }
 
             _context.SaveChanges();
             return true;
         }
+
 
         public bool Delete(int id)
         {

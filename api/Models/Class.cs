@@ -4,6 +4,6 @@ public class Class
 {
     public int Id { get; set; }
     public string Description { get; set; }
-    
-    public ICollection<Brand> Brands { get; set; } 
+
+    public ICollection<BrandClass> BrandClasses { get; set; }
 }

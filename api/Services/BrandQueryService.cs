@@ -26,38 +26,58 @@ namespace api.Services
             var allSectorKeywords = _context.SectorKeywords
                 .Select(k => k.Keyword)
                 .ToList();
-
             
             string cleanedInput = _variationService.RemoveSectorKeywords(brandName, allSectorKeywords);
             var inputVariations = _variationService.GenerateVariations(cleanedInput);
-
-           
+            
             var brandVariations = _context.BrandVariations
-                .Include(bv => bv.Brand)
-                .Where(bv => classIds.Contains(bv.Brand.ClassId))
-                .ToList();
-
+                            .Include(bv => bv.Brand)
+                            .ToList();
             var resultList = new List<BrandSimilarityResultDTO>();
-
+            
             foreach (var brandGroup in brandVariations.GroupBy(bv => bv.BrandId))
             {
-                var brand = brandGroup.First().Brand;
-                double maxScore = 0.0;
+                var groupedBrand = brandGroup.First().Brand;
+                double totalScore = 0.0;
+                int variationCount = 0;
 
-                foreach (var brandVariation in brandGroup)
+                
+                foreach (var inputVariation in inputVariations)
                 {
-                    foreach (var inputVariation in inputVariations)
+                    double bestScoreForInput = 0.0;
+
+                    foreach (var brandVariation in brandGroup)
                     {
                         double score = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
-                        if (score > maxScore)
-                            maxScore = score;
+                        
+                        if (IsNumeric(inputVariation) && IsWord(brandVariation.Variation) &&
+                            NumberToWordsConverter.NumberToWords(int.Parse(inputVariation)) == brandVariation.Variation)
+                        {
+                            score = 1.0; 
+                        }
+                        else if (IsNumeric(brandVariation.Variation) && IsWord(inputVariation) &&
+                                 NumberToWordsConverter.NumberToWords(int.Parse(brandVariation.Variation)) == inputVariation)
+                        {
+                            score = 1.0;
+                        }
+                        else
+                        {
+                            score = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
+                        }
+                        if (score > bestScoreForInput)
+                            bestScoreForInput = score;
                     }
+
+                    totalScore += bestScoreForInput;
+                    variationCount++;
                 }
+
+                double averageScore = totalScore / variationCount;
 
                 resultList.Add(new BrandSimilarityResultDTO
                 {
-                    BrandName = brand.Name,
-                    SimilarityScore = maxScore
+                    BrandName = groupedBrand.Name,
+                    SimilarityScore = averageScore
                 });
             }
 
@@ -69,8 +89,12 @@ namespace api.Services
 
         private double CalculateLevenshteinSimilarity(string s1, string s2)
         {
-            int distance = LevenshteinDistance(s1.ToLower(), s2.ToLower());
-            return 1.0 - (double)distance / Math.Max(s1.Length, s2.Length);
+            
+            double score = 1.0 - (double)LevenshteinDistance(Normalize(s1), Normalize(s2)) 
+                / Math.Max(Normalize(s1).Length, Normalize(s2).Length);
+            return score;
+            //int distance = LevenshteinDistance(s1.ToLower(), s2.ToLower());
+            //return 1.0 - (double)distance / Math.Max(s1.Length, s2.Length);
         }
 
         private int LevenshteinDistance(string s, string t)
@@ -93,5 +117,20 @@ namespace api.Services
             }
             return d[s.Length, t.Length];
         }
+        
+        private string Normalize(string input)
+        {
+            return Regex.Replace(input.ToLower().Trim(), @"\s+", ""); 
+        }
+        private bool IsNumeric(string input)
+        {
+            return int.TryParse(input, out _);
+        }
+
+        private bool IsWord(string input)
+        {
+            return Regex.IsMatch(input, @"^[a-zA-ZçğıöşüÇĞİÖŞÜ]+$"); // Türkçe harf desteği
+        }
+
     }
 }

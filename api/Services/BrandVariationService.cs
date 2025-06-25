@@ -19,11 +19,14 @@ namespace api.Services
         {
             _context.Brands.Add(brand);
             _context.SaveChanges();
+            
+            var sectorIds = brand.BrandSectors.Select(bs => bs.SectorId).ToList();
 
             var sectorKeywords = _context.SectorKeywords
-                .Where(k => k.SectorId == brand.SectorId)
+                .Where(k => sectorIds.Contains(k.SectorId))
                 .Select(k => k.Keyword)
                 .ToList();
+
 
             string cleanedName = RemoveSectorKeywords(brand.Name, sectorKeywords);
             List<string> variations = GenerateVariations(cleanedName);

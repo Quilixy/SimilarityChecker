@@ -11,8 +11,8 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250623140251_Init")]
-    partial class Init
+    [Migration("20250625113606_AddBrandClassAndBrandSectorTables")]
+    partial class AddBrandClassAndBrandSectorTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -32,23 +32,43 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ClassId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SectorId")
+                    b.HasKey("Id");
+
+                    b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("api.Models.BrandClass", b =>
+                {
+                    b.Property<int>("BrandId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandId", "ClassId");
 
                     b.HasIndex("ClassId");
 
+                    b.ToTable("BrandClasses");
+                });
+
+            modelBuilder.Entity("api.Models.BrandSector", b =>
+                {
+                    b.Property<int>("BrandId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SectorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandId", "SectorId");
+
                     b.HasIndex("SectorId");
 
-                    b.ToTable("Brands");
+                    b.ToTable("BrandSectors");
                 });
 
             modelBuilder.Entity("api.Models.BrandVariation", b =>
@@ -126,21 +146,40 @@ namespace api.Migrations
                     b.ToTable("SectorKeywords");
                 });
 
-            modelBuilder.Entity("api.Models.Brand", b =>
+            modelBuilder.Entity("api.Models.BrandClass", b =>
                 {
+                    b.HasOne("api.Models.Brand", "Brand")
+                        .WithMany("BrandClasses")
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("api.Models.Class", "Class")
-                        .WithMany("Brands")
+                        .WithMany("BrandClasses")
                         .HasForeignKey("ClassId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Brand");
+
+                    b.Navigation("Class");
+                });
+
+            modelBuilder.Entity("api.Models.BrandSector", b =>
+                {
+                    b.HasOne("api.Models.Brand", "Brand")
+                        .WithMany("BrandSectors")
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("api.Models.Sector", "Sector")
-                        .WithMany("Brands")
+                        .WithMany("BrandSectors")
                         .HasForeignKey("SectorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Class");
+                    b.Navigation("Brand");
 
                     b.Navigation("Sector");
                 });
@@ -167,14 +206,21 @@ namespace api.Migrations
                     b.Navigation("Sector");
                 });
 
+            modelBuilder.Entity("api.Models.Brand", b =>
+                {
+                    b.Navigation("BrandClasses");
+
+                    b.Navigation("BrandSectors");
+                });
+
             modelBuilder.Entity("api.Models.Class", b =>
                 {
-                    b.Navigation("Brands");
+                    b.Navigation("BrandClasses");
                 });
 
             modelBuilder.Entity("api.Models.Sector", b =>
                 {
-                    b.Navigation("Brands");
+                    b.Navigation("BrandSectors");
 
                     b.Navigation("SectorKeywords");
                 });

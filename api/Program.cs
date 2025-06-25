@@ -21,7 +21,11 @@ builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
 #endregion
 
 #region Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    });
 
 #endregion
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -29,7 +33,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
