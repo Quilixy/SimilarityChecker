@@ -1,8 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using api.Data;
-
-using api.DTOs;
 using api.Helpers;
+using api.DTOs;
 using api.Interfaces;
 using api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -32,52 +31,69 @@ namespace api.Services
             
             var brandVariations = _context.BrandVariations
                             .Include(bv => bv.Brand)
+                            .ThenInclude(b => b.BrandClasses)
+                            .Where(bv => bv.Brand.BrandClasses.Any(bc => classIds.Contains(bc.ClassId)))
                             .ToList();
             var resultList = new List<BrandSimilarityResultDTO>();
             
             foreach (var brandGroup in brandVariations.GroupBy(bv => bv.BrandId))
             {
                 var groupedBrand = brandGroup.First().Brand;
-                double totalScore = 0.0;
+                double totalCombinedScore = 0.0;
+                double totalLevenshtein = 0.0;
+                double totalPhonetic = 0.0;
                 int variationCount = 0;
-
                 
                 foreach (var inputVariation in inputVariations)
                 {
-                    double bestScoreForInput = 0.0;
+                    double bestCombined = 0.0;
+                    double bestLevenshtein = 0.0;
+                    double bestPhonetic = 0.0;
 
                     foreach (var brandVariation in brandGroup)
                     {
-                        double score = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
+                        double levScore = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
+                        double phoneticScore = CalculatePhoneticSimilarity(inputVariation, brandVariation.Variation);
                         
                         if (IsNumeric(inputVariation) && IsWord(brandVariation.Variation) &&
                             NumberToWordsConverter.NumberToWords(int.Parse(inputVariation)) == brandVariation.Variation)
                         {
-                            score = 1.0; 
+                            bestCombined = bestLevenshtein = bestPhonetic = 1.0;
+                            break;
                         }
                         else if (IsNumeric(brandVariation.Variation) && IsWord(inputVariation) &&
                                  NumberToWordsConverter.NumberToWords(int.Parse(brandVariation.Variation)) == inputVariation)
                         {
-                            score = 1.0;
+                            bestCombined = bestLevenshtein = bestPhonetic = 1.0;
+                            break;
                         }
                         else
                         {
-                            score = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
+                            double combined = 0.6 * levScore + 0.4 * phoneticScore;
+
+                            if (combined > bestCombined)
+                            {
+                                bestCombined = combined;
+                                bestLevenshtein = levScore;
+                                bestPhonetic = phoneticScore;
+                            }
                         }
-                        if (score > bestScoreForInput)
-                            bestScoreForInput = score;
                     }
 
-                    totalScore += bestScoreForInput;
+                    totalCombinedScore += bestCombined;
+                    totalLevenshtein += bestLevenshtein;
+                    totalPhonetic += bestPhonetic;
                     variationCount++;
                 }
 
-                double averageScore = totalScore / variationCount;
+               
 
                 resultList.Add(new BrandSimilarityResultDTO
                 {
                     BrandName = groupedBrand.Name,
-                    SimilarityScore = averageScore
+                    SimilarityScore = totalCombinedScore / variationCount,
+                    LevenshteinScore = totalLevenshtein / variationCount,
+                    PhoneticScore = totalPhonetic / variationCount
                 });
             }
 
@@ -90,32 +106,17 @@ namespace api.Services
         private double CalculateLevenshteinSimilarity(string s1, string s2)
         {
             
-            double score = 1.0 - (double)LevenshteinDistance(Normalize(s1), Normalize(s2)) 
-                / Math.Max(Normalize(s1).Length, Normalize(s2).Length);
-            return score;
-            //int distance = LevenshteinDistance(s1.ToLower(), s2.ToLower());
-            //return 1.0 - (double)distance / Math.Max(s1.Length, s2.Length);
+            string norm1 = Normalize(s1);
+            string norm2 = Normalize(s2);
+            int distance = LevenshteinDistanceHelper.Calculate(norm1, norm2);
+            return 1.0 - (double)distance / Math.Max(norm1.Length, norm2.Length);
         }
-
-        private int LevenshteinDistance(string s, string t)
+        private double CalculatePhoneticSimilarity(string s1, string s2)
         {
-            int[,] d = new int[s.Length + 1, t.Length + 1];
-
-            for (int i = 0; i <= s.Length; i++) d[i, 0] = i;
-            for (int j = 0; j <= t.Length; j++) d[0, j] = j;
-
-            for (int i = 1; i <= s.Length; i++)
-            {
-                for (int j = 1; j <= t.Length; j++)
-                {
-                    int cost = (s[i - 1] == t[j - 1]) ? 0 : 1;
-                    d[i, j] = Math.Min(
-                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                        d[i - 1, j - 1] + cost
-                    );
-                }
-            }
-            return d[s.Length, t.Length];
+            string p1 = HybridPhoneticHelper.NormalizePhonetic(s1);
+            string p2 = HybridPhoneticHelper.NormalizePhonetic(s2);
+            int dist = LevenshteinDistanceHelper.Calculate(p1, p2);
+            return 1.0 - (double)dist / Math.Max(p1.Length, p2.Length);
         }
         
         private string Normalize(string input)
@@ -126,10 +127,9 @@ namespace api.Services
         {
             return int.TryParse(input, out _);
         }
-
         private bool IsWord(string input)
         {
-            return Regex.IsMatch(input, @"^[a-zA-ZçğıöşüÇĞİÖŞÜ]+$"); // Türkçe harf desteği
+            return Regex.IsMatch(input, @"^[a-zA-ZçğıöşüÇĞİÖŞÜ]+$");
         }
 
     }
