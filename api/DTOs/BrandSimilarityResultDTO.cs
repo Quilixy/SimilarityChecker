@@ -6,4 +6,5 @@ public class BrandSimilarityResultDTO
     public double SimilarityScore  { get; set; }
     public double LevenshteinScore { get; set; }
     public double PhoneticScore    { get; set; } 
+    public double JaroWinklerScore { get; set; }
 }

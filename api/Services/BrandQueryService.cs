@@ -41,6 +41,7 @@ namespace api.Services
                 var groupedBrand = brandGroup.First().Brand;
                 double totalCombinedScore = 0.0;
                 double totalLevenshtein = 0.0;
+                double totalJaroWinkler = 0.0;
                 double totalPhonetic = 0.0;
                 int variationCount = 0;
                 
@@ -48,11 +49,13 @@ namespace api.Services
                 {
                     double bestCombined = 0.0;
                     double bestLevenshtein = 0.0;
+                    double bestJaroWinkler = 0.0;
                     double bestPhonetic = 0.0;
 
                     foreach (var brandVariation in brandGroup)
                     {
                         double levScore = CalculateLevenshteinSimilarity(inputVariation, brandVariation.Variation);
+                        double jaroWinklerScore = CalculateJaroWinklerSimilarity(inputVariation, brandVariation.Variation);
                         double phoneticScore = CalculatePhoneticSimilarity(inputVariation, brandVariation.Variation);
                         
                         if (IsNumeric(inputVariation) && IsWord(brandVariation.Variation) &&
@@ -75,6 +78,7 @@ namespace api.Services
                             {
                                 bestCombined = combined;
                                 bestLevenshtein = levScore;
+                                bestJaroWinkler = jaroWinklerScore;
                                 bestPhonetic = phoneticScore;
                             }
                         }
@@ -82,17 +86,17 @@ namespace api.Services
 
                     totalCombinedScore += bestCombined;
                     totalLevenshtein += bestLevenshtein;
+                    totalJaroWinkler += bestJaroWinkler;
                     totalPhonetic += bestPhonetic;
                     variationCount++;
                 }
-
-               
-
+                
                 resultList.Add(new BrandSimilarityResultDTO
                 {
                     BrandName = groupedBrand.Name,
                     SimilarityScore = totalCombinedScore / variationCount,
                     LevenshteinScore = totalLevenshtein / variationCount,
+                    JaroWinklerScore = totalJaroWinkler / variationCount,
                     PhoneticScore = totalPhonetic / variationCount
                 });
             }
@@ -105,13 +109,20 @@ namespace api.Services
 
         private double CalculateLevenshteinSimilarity(string s1, string s2)
         {
-            
             string norm1 = Normalize(s1);
             string norm2 = Normalize(s2);
             int distance = LevenshteinDistanceHelper.Calculate(norm1, norm2);
             return 1.0 - (double)distance / Math.Max(norm1.Length, norm2.Length);
         }
-        private double CalculatePhoneticSimilarity(string s1, string s2)
+
+        private double CalculateJaroWinklerSimilarity(string s1, string s2)
+        {
+            string p1 = Normalize(s1);
+            string p2 = Normalize(s2);
+            double dist = JaroWinklerDistanceHelper.CalculateJaroWinkler(p1, p2);
+            return dist;
+        }
+        private double CalculatePhoneticSimilarity(string s1, string s2)    
         {
             string p1 = HybridPhoneticHelper.NormalizePhonetic(s1);
             string p2 = HybridPhoneticHelper.NormalizePhonetic(s2);
