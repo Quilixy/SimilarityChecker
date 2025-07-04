@@ -132,7 +132,7 @@ namespace api.Services
         
         private string Normalize(string input)
         {
-            return Regex.Replace(input.ToLower().Trim(), @"\s+", ""); 
+            return Regex.Replace(input.ToLower().Trim(), @"\s+", "");
         }
         private bool IsNumeric(string input)
         {
@@ -145,3 +145,4 @@ namespace api.Services
 
     }
 }
+

@@ -68,13 +68,34 @@ namespace api.Services
             List<string> variations = new List<string> { cleanedName };
             
             string numberConverted = ConvertNumbersToWords(cleanedName);
-            if (!string.IsNullOrWhiteSpace(numberConverted) && numberConverted != cleanedName)
-                variations.Add(numberConverted);
+            if (!string.IsNullOrWhiteSpace(numberConverted) && !string.Equals(numberConverted, cleanedName, StringComparison.OrdinalIgnoreCase))
+                variations.Add(numberConverted.ToLowerInvariant());
             
-            var parts = Regex.Split(cleanedName, @"[\s&-]+");
-            variations.AddRange(parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+            var parts = Regex.Split(cleanedName, @"[\s&-]+")
+                             .Where(p => !string.IsNullOrWhiteSpace(p))
+                             .Select(p => p.ToLowerInvariant())
+                             .ToList();
 
-            return variations;
+            variations.AddRange(parts);
+            
+            string joined = string.Concat(parts);
+            if (!string.IsNullOrWhiteSpace(joined) && !string.Equals(joined, cleanedName, StringComparison.OrdinalIgnoreCase))
+                variations.Add(joined);
+            
+            var numberConvertedParts = Regex.Split(numberConverted, @"[\s&-]+")
+                                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                                            .Select(p => p.ToLowerInvariant())
+                                            .ToList();
+
+            string joinedNumberWords = string.Concat(numberConvertedParts);
+            if (!string.IsNullOrWhiteSpace(joinedNumberWords) && !string.Equals(joinedNumberWords, numberConverted, StringComparison.OrdinalIgnoreCase))
+                variations.Add(joinedNumberWords);
+            
+            return variations
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v.Trim().ToLowerInvariant())
+                .Distinct()
+                .ToList();
         }
     }
 }

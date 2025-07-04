@@ -5,14 +5,15 @@ namespace api.Data;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<Brand>           Brands           { get; set; }
-    public DbSet<Class>           Classes          { get; set; }
-    public DbSet<Sector>          Sectors          { get; set; }
-    public DbSet<SectorKeyword>   SectorKeywords   { get; set; }
-    public DbSet<BrandVariation>  BrandVariations  { get; set; }
+    public DbSet<Brand> Brands { get; set; }
+    public DbSet<Class> Classes { get; set; }
+    public DbSet<Sector> Sectors { get; set; }
+    public DbSet<SectorKeyword> SectorKeywords { get; set; }
+    public DbSet<BrandVariation> BrandVariations { get; set; }
 
-    public DbSet<BrandClass>      BrandClasses     { get; set; } 
-    public DbSet<BrandSector>     BrandSectors     { get; set; } 
+    public DbSet<BrandClass> BrandClasses { get; set; } 
+    public DbSet<BrandSector> BrandSectors { get; set; } 
+    public DbSet<User> Users => Set<User>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
