@@ -1,8 +1,10 @@
-﻿using api.Data;
+﻿using System.Security.Claims;
+using api.Data;
 using api.DTOs.AccountDTOs;
 using api.Interfaces;
 using api.Models;
 using Jose.native;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,4 +53,27 @@ public class AuthController : ControllerBase
         var token = _tokenService.CreateToken(user);
         return Ok(new { token, user = new { user.Id, user.Email, user.Role } });
     }
+    
+    [HttpDelete("delete")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr))
+            return Unauthorized("Token içinde kullanıcı ID bulunamadı.");
+
+        if (!int.TryParse(userIdStr, out int userId))
+            return BadRequest("Kullanıcı ID hatalı.");
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return NotFound("Kullanıcı bulunamadı.");
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+
+        return Ok("Hesabınız başarıyla silindi.");
+    }
+
+
 }
