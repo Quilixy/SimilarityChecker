@@ -1,11 +1,14 @@
 using System.Text;
 using api.Data;
 using api.Interfaces;
+using api.Models;
 using api.Repositories;
 using api.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,12 +19,15 @@ builder.WebHost.UseUrls("http://0.0.0.0:5269");
 
 #region Repositories
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 #endregion
 
 #region Services
 builder.Services.AddScoped<IBrandVariationService, BrandVariationService>();
 builder.Services.AddScoped<IBrandQueryService, BrandQueryService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 #endregion
 
 #region Controllers
@@ -35,6 +41,7 @@ builder.Services.AddControllers()
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddSwaggerGen(options =>
 {

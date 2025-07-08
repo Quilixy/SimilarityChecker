@@ -5,7 +5,7 @@ using api.Repositories;
 
 [Route("api/admin")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "admin")]
 public class AdminController : ControllerBase
 {
     private readonly IUserRepository _userRepository;

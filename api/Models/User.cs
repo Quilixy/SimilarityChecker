@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace api.Models;
 
@@ -14,4 +15,5 @@ public class User
 
     public string Role { get; set; } = "user";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string ThemePreference { get; set; } = "system";
 }
